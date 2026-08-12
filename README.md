@@ -15,7 +15,7 @@ A clean, responsive, and fully functional Calculator web application built using
 
 ## 🚀 Live Demo
 Check out the live website here: 
-👉 [View Live Demo](https://gb376052-cpu.github.io/Calculator-App/) *(Apna actual live link yahan daal dein)*
+👉 [View Live Demo]([https://gb376052-cpu.github.io/Calculator-App/](https://gb376052-cpu.github.io/JS-Calculator/)) *(Apna actual live link yahan daal dein)*
 
 ## 📂 Project Structure
 ```text
