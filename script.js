@@ -22,63 +22,113 @@ themeToggle.addEventListener('click', () => {
     themeToggle.textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌙';
 });
 
-// Calculator Logic
+// Calculator Core Logic
 let currentInput = '0';
 let calculationHistory = JSON.parse(localStorage.getItem('calc_history')) || [];
 
+// Main Helper Function to process inputs (Both Click and Keyboard)
+function processCalculatorInput(value) {
+    if (value === 'C') {
+        currentInput = '0';
+        historyPreview.textContent = '';
+    } else if (value === 'DEL') {
+        currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
+    } else if (value === '=') {
+        try {
+            let expression = currentInput
+                .replace(/×/g, '*')
+                .replace(/÷/g, '/')
+                .replace(/pi/g, 'Math.PI');
+
+            // Fixing Scientific functions to work with Degrees correctly
+            expression = expression
+                .replace(/sin\(/g, 'Math.sin((Math.PI/180)*')
+                .replace(/cos\(/g, 'Math.cos((Math.PI/180)*')
+                .replace(/tan\(/g, 'Math.tan((Math.PI/180)*')
+                .replace(/sqrt\(/g, 'Math.sqrt(')
+                .replace(/log\(/g, 'Math.log10(');
+
+            let result = eval(expression);
+            
+            if (typeof result === 'number' && !Number.isInteger(result)) {
+                result = parseFloat(result.toFixed(6));
+            }
+            
+            let record = `${currentInput} = ${result}`;
+            calculationHistory.unshift(record);
+            if(calculationHistory.length > 10) calculationHistory.pop();
+            localStorage.setItem('calc_history', JSON.stringify(calculationHistory));
+
+            historyPreview.textContent = currentInput;
+            currentInput = result.toString();
+        } catch (error) {
+            currentInput = 'Error';
+        }
+    } else {
+        if (currentInput === '0' && value !== '.' && value !== 'sin(' && value !== 'cos(' && value !== 'tan(' && value !== 'sqrt(' && value !== 'log(') {
+            currentInput = value;
+        } else if (currentInput === '0' && (value === 'sin(' || value === 'cos(' || value === 'tan(' || value === 'sqrt(' || value === 'log(')) {
+            currentInput = value;
+        } else {
+            currentInput += value;
+        }
+    }
+    mainDisplay.value = currentInput;
+}
+
+// Button Click Listeners
 const allCalculatorKeys = document.querySelectorAll('#standardPanel .btn, #scientificPanel .btn');
 
 allCalculatorKeys.forEach(button => {
     button.addEventListener('click', () => {
         const value = button.getAttribute('data-value');
-
-        if (value === 'C') {
-            currentInput = '0';
-            historyPreview.textContent = '';
-        } else if (value === 'DEL') {
-            currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
-        } else if (value === '=') {
-            try {
-                let expression = currentInput
-                    .replace(/×/g, '*')
-                    .replace(/÷/g, '/')
-                    .replace(/pi/g, 'Math.PI');
-
-                // Fixing Scientific functions to work with Degrees correctly
-                expression = expression
-                    .replace(/sin\(/g, 'Math.sin((Math.PI/180)*')
-                    .replace(/cos\(/g, 'Math.cos((Math.PI/180)*')
-                    .replace(/tan\(/g, 'Math.tan((Math.PI/180)*')
-                    .replace(/sqrt\(/g, 'Math.sqrt(')
-                    .replace(/log\(/g, 'Math.log10(');
-
-                let result = eval(expression);
-                
-                if (typeof result === 'number' && !Number.isInteger(result)) {
-                    result = parseFloat(result.toFixed(6));
-                }
-                
-                let record = `${currentInput} = ${result}`;
-                calculationHistory.unshift(record);
-                if(calculationHistory.length > 10) calculationHistory.pop();
-                localStorage.setItem('calc_history', JSON.stringify(calculationHistory));
-
-                historyPreview.textContent = currentInput;
-                currentInput = result.toString();
-            } catch (error) {
-                currentInput = 'Error';
-            }
-        } else {
-            if (currentInput === '0' && value !== '.' && value !== 'sin(' && value !== 'cos(' && value !== 'tan(' && value !== 'sqrt(' && value !== 'log(') {
-                currentInput = value;
-            } else if (currentInput === '0' && (value === 'sin(' || value === 'cos(' || value === 'tan(' || value === 'sqrt(' || value === 'log(')) {
-                currentInput = value;
-            } else {
-                currentInput += value;
-            }
-        }
-        mainDisplay.value = currentInput;
+        if (value) processCalculatorInput(value);
     });
+});
+
+// ==================== KEYBOARD SUPPORT LOGIC ====================
+document.addEventListener('keydown', (e) => {
+    // Tip aur BMI Calculator panels ke input box me keyboard normal type hona chahiye
+    const activePanel = modeSelector.value;
+    if (activePanel === 'tip' || activePanel === 'bmi') return;
+
+    // Agar focus active input par ho to conflict avoid karein
+    if (document.activeElement.tagName === 'INPUT' && document.activeElement !== mainDisplay) return;
+
+    const key = e.key;
+
+    // Numbers 0-9 aur Decimal (.)
+    if ((key >= '0' && key <= '9') || key === '.') {
+        processCalculatorInput(key);
+    } 
+    // Basic Operations
+    else if (key === '+') {
+        processCalculatorInput('+');
+    } else if (key === '-') {
+        processCalculatorInput('-');
+    } else if (key === '*') {
+        processCalculatorInput('×');
+    } else if (key === '/') {
+        e.preventDefault(); // Browser Quick Search open hone se rokein
+        processCalculatorInput('÷');
+    } 
+    // Brackets
+    else if (key === '(' || key === ')') {
+        processCalculatorInput(key);
+    }
+    // Equals / Calculate
+    else if (key === 'Enter' || key === '=') {
+        e.preventDefault();
+        processCalculatorInput('=');
+    } 
+    // Erase Single Digit
+    else if (key === 'Backspace') {
+        processCalculatorInput('DEL');
+    } 
+    // Clear All
+    else if (key === 'Escape' || key.toLowerCase() === 'c') {
+        processCalculatorInput('C');
+    }
 });
 
 // Tip Calculator Logic
